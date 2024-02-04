@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="flex justify-center login-container ">
     <!--  登录 -->
@@ -13,10 +11,10 @@
     >
       <a-form-item
           label="用户名"
-          name="userName"
-          v-bind="validateLoginInfos.userName"
+          name="Name"
+          v-bind="validateLoginInfos.Name"
       >
-        <a-input v-model:value="loginForm.userName" />
+        <a-input v-model:value="loginForm.Name"/>
       </a-form-item>
 
       <a-form-item
@@ -24,7 +22,7 @@
           name="passWord"
           v-bind="validateLoginInfos.passWord"
       >
-        <a-input-password v-model:value="loginForm.passWord" />
+        <a-input-password v-model:value="loginForm.passWord"/>
       </a-form-item>
 
       <a-form-item :wrapper-col="{ offset: 12, span: 16 }">
@@ -59,7 +57,7 @@
             :before-upload="beforeUpload"
             @change="handleChange"
         >
-          <img v-if="resisterForm.PictureUrl" :src="resisterForm.PictureUrl" alt="avatar" />
+          <img v-if="resisterForm.PictureUrl" :src="resisterForm.PictureUrl" class="w-full rounded-md" alt="avatar"/>
           <div v-else>
             <loading-outlined v-if="loading"></loading-outlined>
             <plus-outlined v-else></plus-outlined>
@@ -72,7 +70,7 @@
           name="Name"
           v-bind="validateRegisterInfos.Name"
       >
-        <a-input v-model:value="resisterForm.Name" />
+        <a-input v-model:value="resisterForm.Name"/>
       </a-form-item>
 
       <a-form-item
@@ -80,7 +78,7 @@
           name="PassWord"
           v-bind="validateRegisterInfos.PassWord"
       >
-        <a-input-password v-model:value="resisterForm.PassWord" />
+        <a-input-password v-model:value="resisterForm.PassWord"/>
       </a-form-item>
 
       <a-form-item :wrapper-col="{ offset: 12, span: 16 }">
@@ -94,18 +92,22 @@
 
 
 <script setup>
-import {ref, reactive,toRaw, computed, watch, getCurrentInstance, onMounted, onUnmounted} from 'vue'
+import {computed, getCurrentInstance, onMounted, onUnmounted, reactive, ref, toRaw} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 
 //接口对象
 import AuthorService from '@/api/index.js'
+//头像
+import {Form} from 'ant-design-vue';
 
 //***路由对象
 const route = useRoute()
+
 //***路由实例
 const router = useRouter();
 //***获取上下文对象
 const {proxy} = getCurrentInstance()
+const { $notification } = getCurrentInstance().appContext.config.globalProperties;
 
 //***定义props接收父组件传值
 const props = defineProps({
@@ -125,13 +127,11 @@ const computedName = computed(() => {
 })
 
 //***方法数据
-
-import { Form } from 'ant-design-vue';
 const useForm = Form.useForm;
 // ------------------登录 start------------------------
 const isLogin = ref(true)
 const loginForm = reactive({
-  userName: '',
+  Name: '',
   passWord: ''
 })
 
@@ -151,15 +151,41 @@ const loginRulesRef = reactive({
   ],
 
 });
-const { resetFields:resetLoginFields, validate:validateLogin, validateInfos:validateLoginInfos } = useForm(loginForm, loginRulesRef, {
-  onValidate: (...args) => {},
+const {
+  resetFields: resetLoginFields,
+  validate: validateLogin,
+  validateInfos: validateLoginInfos
+} = useForm(loginForm, loginRulesRef, {
+  onValidate: (...args) => {
+  },
 });
 
 const onLoginSubmit = () => {
   validateLogin()
-      .then(() => {
+      .then(async () => {
+        try {
+          const {Message,state,token} = await AuthorService.loginUser(toRaw(loginForm))
+          if(state !== 1){
+            $notification.open({
+              message: '错误',
+              type:'error',
+              description:Message,
+              placement:'bottomRight'
+            });
+            return
+          }
+          $notification.open({
+            message: '成功',
+            type:'success',
+            description:Message,
+            placement:'bottomRight'
+          });
+          sessionStorage.setItem('Authorization', token);
+          router.push('/home')
+        } catch (e) {
+          console.log(e,'e')
+        }
 
-        console.log(toRaw(loginForm));
       })
       .catch(err => {
         // console.log('error', err);
@@ -175,20 +201,15 @@ const goRegister = () => {
 // ------------------注册 start------------------------
 const isRegister = ref(false)
 const resisterForm = reactive({
-  ID:'',
-  Account:'',
-  Name:'',
-  PassWord:'',
-  PictureUrl:'',
+  ID: '',
+  Account: '',
+  Name: '',
+  PassWord: '',
+  PictureUrl: '',
+  Introduction:''
 })
 
-//头像
-import { message } from 'ant-design-vue';
-function getBase64(img, callback) {
-  const reader = new FileReader();
-  reader.addEventListener('load', () => callback(reader.result));
-  reader.readAsDataURL(img);
-}
+
 const fileList = ref([]);
 const loading = ref(false);
 const handleChange = info => {
@@ -198,24 +219,38 @@ const handleChange = info => {
   }
   if (info.file.status === 'done') {
     // Get this url from response in real world.
-    getBase64(info.file.originFileObj, base64Url => {
-      resisterForm.PictureUrl = base64Url;
-      loading.value = false;
-    });
+    resisterForm.PictureUrl = info.file.response.pictureName
+    loading.value = false;
+
   }
   if (info.file.status === 'error') {
     loading.value = false;
-    message.error('upload error');
+    $notification.open({
+      message: '错误',
+      type:'error',
+      description:'upload error',
+      placement:'bottomRight'
+    });
   }
 };
 const beforeUpload = file => {
   const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
   if (!isJpgOrPng) {
-    message.error('You can only upload JPG file!');
+    $notification.open({
+      message: '错误',
+      type:'error',
+      description:'只能上传 JPG或PNG 文件!',
+      placement:'bottomRight'
+    });
   }
   const isLt2M = file.size / 1024 / 1024 < 2;
   if (!isLt2M) {
-    message.error('Image must smaller than 2MB!');
+    $notification.open({
+      message: '错误',
+      type:'error',
+      description:'图片必须小于 2MB!',
+      placement:'bottomRight'
+    });
   }
   return isJpgOrPng && isLt2M;
 };
@@ -242,15 +277,35 @@ const rulesRegisterRef = reactive({
   ],
 
 });
-const { resetFields:resetRegisterFields, validate:validateRegister, validateInfos:validateRegisterInfos } = useForm(resisterForm, rulesRegisterRef, {
-  onValidate: (...args) => {},
+const {
+  resetFields: resetRegisterFields,
+  validate: validateRegister,
+  validateInfos: validateRegisterInfos
+} = useForm(resisterForm, rulesRegisterRef, {
+  onValidate: (...args) => {
+  },
 });
 const onRegisterSubmit = () => {
   validateRegister()
       .then(async () => {
-         const result = await AuthorService.registerUser(toRaw(resisterForm))
-        console.log(result,toRaw(resisterForm));
+        try {
+          const {Message,state} = await AuthorService.registerUser(toRaw(resisterForm))
+          if(state !== 1){
+            $notification.open({
+              message: '错误',
+              type:'error',
+              description:Message,
+              placement:'bottomRight'
+            });
+          }
+          loginForm.Name = resisterForm.Name
+          loginForm.passWord = resisterForm.PassWord
+          isLogin.value = true
+          isRegister.value = false
+        } catch (e) {
+          console.log(e,'e')
 
+        }
       })
       .catch(err => {
         // console.log('error', err);
@@ -262,8 +317,6 @@ const goLogin = () => {
   isRegister.value = false
 }
 // ------------------注册 end------------------------
-
-
 
 
 //***监听普通数据，多个属性，要用数组包起来[attributes1,attributes2]
@@ -291,22 +344,24 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.login-container{
+.login-container {
   height: 100vh;
   background: url('@/assets/login_images/background.jpg') center center fixed no-repeat;
   background-size: cover;
   position: relative;
 
-  .login-form{
+  .login-form {
     position: absolute;
     top: 30%;
     right: 10%;
   }
 }
+
 .avatar-uploader > .ant-upload {
   width: 128px;
   height: 128px;
 }
+
 .ant-upload-select-picture-card i {
   font-size: 32px;
   color: #999;

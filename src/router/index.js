@@ -10,6 +10,18 @@ const routes = [
         path: '/login',
         component: () => import('@/pages/login/index.vue'),
     },
+    {
+        path: '/home',
+        component: () => import('@/pages/user/index.vue'),
+        // children:[{
+        //     path: 'createArticle',
+        //     component: () => import('@/pages/user/Article/createArticle.vue'),
+        // }]
+    },
+    {
+        path: '/home/createArticle',
+        component: () => import('@/pages/user/Article/createArticle.vue'),
+    },
     // 更多路由...
 ];
 

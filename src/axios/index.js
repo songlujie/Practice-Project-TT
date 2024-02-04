@@ -6,13 +6,15 @@ const axiosInstance = Axios.create({
     // 其他配置...
 });
 
+axiosInstance.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
 
+if (sessionStorage.getItem('Authorization')){
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${sessionStorage.getItem('Authorization')}`
+}
 
 // 你可以添加请求和响应拦截器
 axiosInstance.interceptors.request.use(config => {
-    if (sessionStorage.getItem('Authorization')){
-        config.defaults.headers.common['Authorization'] = sessionStorage.getItem('Authorization');
-    }
+
     // 在发送请求前做些什么
     return config;
 }, error => {
@@ -21,8 +23,12 @@ axiosInstance.interceptors.request.use(config => {
 });
 
 axiosInstance.interceptors.response.use(response => {
-    // 对响应数据做点什么
-    return response;
+    if (response.status !== 200) {
+        throw new Error(response.data.message);
+    } else {
+        return response.data
+    }
+
 }, error => {
     // 对响应错误做点什么
     return Promise.reject(error);
