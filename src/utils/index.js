@@ -52,3 +52,13 @@ export function updateArrayObject(arr, obj, compareKey) {
     }
     return arr
 }
+
+
+// 假设使用 localStorage 来存储 token
+/**
+ * 判断登录状态
+ * @returns Boolean
+ */
+export function isAuthenticated() {
+    return !!localStorage.getItem('Authorization');
+}

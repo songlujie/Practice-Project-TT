@@ -8,8 +8,8 @@ const axiosInstance = Axios.create({
 
 axiosInstance.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
 
-if (sessionStorage.getItem('Authorization')){
-    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${sessionStorage.getItem('Authorization')}`
+if (localStorage.getItem('Authorization')){
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('Authorization')}`
 }
 
 // 你可以添加请求和响应拦截器

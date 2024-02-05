@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed, watch, getCurrentInstance, onMounted, onUnmounted} from 'vue'
+import {ref, reactive, computed, watch,nextTick, getCurrentInstance, onMounted, onUnmounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import AuthorService from "@/api/index.js";
 import {useUserInfoStore} from "@/store/index.js";
@@ -46,7 +46,9 @@ const params = reactive({
 })
 const getAllArticleInUser = async () => {
   try {
-
+    console.log(userInfoStore.userInfo.author,'userInfo')
+    if(!userInfoStore.userInfo.author?.id) return
+    params.AuthorID = userInfoStore.userInfo.author.id
     const result = await AuthorService.getAllArticleInUser(params)
     console.log(result,'result')
     return
@@ -72,9 +74,22 @@ const getAllArticleInUser = async () => {
 //watch(() => obj.attributes, (newVal, oldVal) => {
 //}, {})
 
+watch(() => userInfoStore.userInfo, (newValue, oldValue) => {
+  //这个回调会在someProperty发生变化时执行
+  //你也可以检查newValue是否满足特定条件来决定是否执行方法
+
+  if (newValue !== undefined) {
+    console.log('加载时机', userInfoStore.userInfo)
+    getAllArticleInUser()
+  }
+}, {
+  immediate: true, // 立即执行一次回调以检查初始值
+});
+
 //***DOM挂载完毕
 onMounted(() => {
-  getAllArticleInUser()
+
+
 })
 //***销毁组件
 onUnmounted(() => {
@@ -83,7 +98,8 @@ onUnmounted(() => {
 //***定义Expose暴露自己的属性方法
 const exposeName = ref(null)
 defineExpose({
-  exposeName
+  exposeName,
+  getAllArticleInUser
 })
 </script>
 

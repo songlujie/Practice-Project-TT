@@ -9,13 +9,17 @@ import { defineStore } from 'pinia'
 export const useUserInfoStore = defineStore('userInfo', {
     state: () => {
         return {
-            userInfo: {}
+            userInfo: {},
+            isLogin:false
         }
     },
     actions: {
         setUserInfo(value) {
             this.userInfo = value
-        }
+        },
+        setIsLogin(value){
+            this.isLogin = value
+        },
     },
     getters: {
     }

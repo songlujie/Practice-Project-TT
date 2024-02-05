@@ -109,7 +109,7 @@
       </a-tabs>
       <template v-for="i in componentTas" :key="i.ID">
         <keep-alive>
-          <component :is="dom[i.Component]" :Name="i.Name" v-if="i.ID === activeKey"></component>
+          <component :is="dom[i.Component]" :Name="i.Name" v-if="i.ID === activeKey" :ref="`article${i.ID}`"></component>
         </keep-alive>
       </template>
     </a-col>
@@ -120,7 +120,7 @@
 
 
 <script setup>
-import {computed, getCurrentInstance, onMounted, onUnmounted, reactive, ref,shallowReactive} from 'vue'
+import {computed, getCurrentInstance, nextTick, onMounted, onUnmounted, reactive,watch, ref, shallowReactive} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {AppstoreTwoTone, EditTwoTone, HomeTwoTone, SettingOutlined} from '@ant-design/icons-vue';
 import AuthorService from '@/api/index.js'
@@ -156,10 +156,12 @@ const emits = defineEmits(['voidName'])
 //***方法、数据
 
 //获取用户信息
-const isLogin = ref(false)
 const userInfoStore = useUserInfoStore()
+const isLogin = computed(() => {
+  return userInfoStore.isLogin
+})
+
 const valueExists = (obj, valueToFind) => {
-  console.log(obj,valueToFind,'123123')
   return Object.values(obj).includes(valueToFind);
 }
 const userInfo = computed(() => {
@@ -168,6 +170,7 @@ const userInfo = computed(() => {
 const bloginfo = computed(() => {
   return userInfoStore.userInfo.bloginfo
 })
+const article1 = ref(null)
 const getUserInfo = async () => {
   try {
     if(valueExists(userInfoStore.userInfo,'author')) return
@@ -181,8 +184,11 @@ const getUserInfo = async () => {
         placement:'bottomRight'
       });
     }
-    isLogin.value = true
-    userInfoStore.setUserInfo({author,bloginfo})
+    await userInfoStore.setUserInfo({author,bloginfo})
+    // nextTick(() => {
+    //   console.log(article1.value,'article1')
+    //   article1.value.getAllArticleInUser()
+    // })
   }catch(e){
     console.log(e)
   }
@@ -192,7 +198,8 @@ const getUserInfo = async () => {
 //退出登录
 const signOut = () => {
   userInfoStore.setUserInfo({})
-  sessionStorage.removeItem('Authorization')
+  userInfoStore.setIsLogin(false)
+  localStorage.removeItem('Authorization')
   router.push('/login');
 }
 
@@ -269,8 +276,9 @@ const componentTas = reactive([{
 //}, {})
 
 //***监听引用数据类型对象中的某个值，多个值，写法还是以函数返回的形式。但是多个属性，要用数组包起来[() =>obj.attributes1,() =>obj.attributes2]
-//watch(() => obj.attributes, (newVal, oldVal) => {
-//}, {})
+watch(() => userInfoStore.userInfo, (newVal, oldVal) => {
+    userInfoStore.setIsLogin(!!newVal.author.id)
+}, {})
 
 //***DOM挂载完毕
 onMounted(async() => {

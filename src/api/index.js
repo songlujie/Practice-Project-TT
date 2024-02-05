@@ -25,7 +25,7 @@ class AuthorService{
 
     //获取用户的文章
     async getAllArticleInUser(data) {
-        return axiosInstance.post(`Blogs/GetBlogs`,data)
+        return axiosInstance.post(`Blogs/GetBlogs`,{param:data})
     }
 }
 

@@ -164,12 +164,12 @@ const onLoginSubmit = () => {
   validateLogin()
       .then(async () => {
         try {
-          const {Message,state,token} = await AuthorService.loginUser(toRaw(loginForm))
+          const {message,state,token} = await AuthorService.loginUser(toRaw(loginForm))
           if(state !== 1){
             $notification.open({
               message: '错误',
               type:'error',
-              description:Message,
+              description:message,
               placement:'bottomRight'
             });
             return
@@ -177,11 +177,12 @@ const onLoginSubmit = () => {
           $notification.open({
             message: '成功',
             type:'success',
-            description:Message,
+            description:message,
             placement:'bottomRight'
           });
-          sessionStorage.setItem('Authorization', token);
-          router.push('/home')
+          localStorage.setItem('Authorization', token);
+          await getUserInfo()
+          await router.push('/home')
         } catch (e) {
           console.log(e,'e')
         }
@@ -196,6 +197,30 @@ const goRegister = () => {
   isLogin.value = false
   isRegister.value = true
 }
+
+//获取用户信息
+import {useUserInfoStore} from '@/store'
+const userInfoStore = useUserInfoStore()
+const getUserInfo = async () => {
+  try {
+    const {state,Message,result:{author,bloginfo}} = await AuthorService.userInfos()
+
+    if(state !== 1){
+      $notification.open({
+        message: '错误',
+        type:'error',
+        description:Message,
+        placement:'bottomRight'
+      });
+    }
+    userInfoStore.setUserInfo({author,bloginfo})
+    userInfoStore.setIsLogin(true)
+  }catch(e){
+    console.log(e)
+  }
+
+}
+
 // ------------------登录 end------------------------
 
 // ------------------注册 start------------------------

@@ -40,10 +40,10 @@ notification.config({
 
 // 将 notification 方法注入到全局属性中
 app.config.globalProperties.$notification = notification;
-
+app.use(pinia);
 app.use(Antd);
 app.use(router);
-app.use(pinia);
+
 // 使用其他组件和插件...
 app.use(VMdEditor);
 app.mount('#app');
